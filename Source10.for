@@ -5,7 +5,7 @@
      4 CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,JSTEP,KINC)
 C
       INCLUDE 'ABA_PARAM.INC'
-CCCC
+C
       CHARACTER*80 CMNAME
       DIMENSION STRESS(NTENS),STATEV(NSTATV),
      1 DDSDDE(NTENS,NTENS),DDSDDT(NTENS),DRPLDE(NTENS),
@@ -41,7 +41,7 @@ C INPUT MATERIAL PARAMETERS
       FRT=PROPS(9)
       alpha=PROPS(10)
 
-      FR=EXP((FN0-FGA0-(FRN-FRT)*DTEMP)/(FLama-FKapa)) !
+      FR=EXP((FN0-FGA0-(FRN-FRT)*DTEMP)/(FLama-FKapa))
       BETA_T=(FRN)/(FLama-FKapa)
       patm=101.0
       FTIME=0.0 !PSEUDo TIME
@@ -57,7 +57,7 @@ C LOOP BEGIN
       FVOID1=STATEV(1)
       FPC1=STATEV(2)
     
-C  
+C 第一次应力计算     
       CALL SINV(STRESS,SINV1,SINV2,NDI,NSHR)
       
       FP1=SINV1 !p
@@ -72,15 +72,14 @@ C
       FPFP=FN*((FQ1/FM/FP1)**(FN-1))*(-FQ1/FM)/FP1/FP1+1/FP1/LOG(FR) !first order derivation of F to p
       FPFQ=FN*((FQ1/FM/FP1)**(FN-1))/FM/FP1 !first order derivation of F to q
       FATA=FQ1/FP1 !应力比
-      FPFR1=LOG(FP1/FPC1)/LOG(FR)/LOG(FR)*(FRN-FRT)/(FLama-FKapa) ! partial F partial r * partial r partial T
       
       FPB1=FPC1*EXP(-((FATA/FM)**FN)*LOG(FR)) !image point 
       FSDB1=SQRT(1+FATA**2)*FPB1 ! distance of image point to the original point
       Ratio_1=FSDB1/FSD1
       
       FDS1=(FM*FM*(FSD1/FSDB1)**2-FATA*FATA)/2.0/FATA
-      FKP1=(1+FVOID1)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB1/FSD1)**52-
-     & FATA*FATA)/2.0/FATA
+      FKP1=(1+FVOID1)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB1/FSD1)**2-
+     1 FATA*FATA)/2.0/FATA
         
 999   CONTINUE    
       
@@ -90,25 +89,25 @@ C
       End Do
 
       CALL GETDEP(FP1,FQ1,STRESS,FDS1,FPFP,FPFQ,DE1,FKP1,DEP1,DDSTRAN,
-     & FGS1,FF1,FG1,NDI,NSHR,NTENS)
+     1 FGS1,FF1,FG1,alpha,DDTEMP,BETA_T,FR,NDI,NSHR,NTENS)
             
       DEVP1=FDS1*FGS1 !plastic volumetric STRAIN increment & hardening parameter
       
       FPC2=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)*EXP(-BETA_T*DDTEMP)
   
       CALL GETDSTRESS(alpha,DEP1,DDSTRAN,DDTEMP,DSTRESS1,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG1,FF1,BETA_T,FR,TH_PLAS1,DDTEMP,FPFR1,
+      CALL GETTH_PLAS(FG1,FF1,FKP1,BETA_T,FR,TH_PLAS1,DDTEMP,
      & NDI,NSHR,NTENS)
  
       Do I=1,NTENS
           STRESS1(I)=STRESS(I)+DSTRESS1(I)
-     !!&-TH_PLAS1(I)
+     !!& -TH_PLAS1(I)
       End Do
       
       DEV=(DDSTRAN(1)+DDSTRAN(2)+DDSTRAN(3)) !volumetric strain
       FVOID2=EXP(-DEV)*(1+FVOID1)-1 !对数应变&true strain
      & +alpha*DDTEMP
-C Second calculation
+C 第二次应力计算 
       CALL SINV(STRESS,SINV1,SINV2,NDI,NSHR)
       FP2=SINV1
       FQ2=SINV2
@@ -119,34 +118,31 @@ C Second calculation
       
       FPFP=FN*((FQ2/FM/FP2)**(FN-1))*(-FQ2/FM)/FP2/FP2+1/FP2/LOG(FR)
       FPFQ=FN*((FQ2/FM/FP2)**(FN-1))/FM/FP2
-
       FATA=FQ2/FP2
-      FPFR2=LOG(FP2/FPC2)/LOG(FR)/LOG(FR)*(FRN-FRT)/(FLama-FKapa)
-
       
       FSD2=SQRT(FP2**2+FQ2**2) 
       FPB2=FPC2*EXP(-((FATA/FM)**FN)*LOG(FR))
       FSDB2=SQRT(1+FATA**2)*FPB2
       Ratio_2=FSDB2/FSD2
      
-      FKP2=(1+FVOID2)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB2/FSD2)**52-
+      FKP2=(1+FVOID2)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB2/FSD2)**2-
      1 FATA*FATA)/2.0/FATA
       FDS2=(FM*FM*(FSD2/FSDB2)**2-FATA*FATA)/2.0/FATA
   
       CALL GETDEP(FP2,FQ2,STRESS1,FDS2,FPFP,FPFQ,DE2,FKP2,DEP2,DDSTRAN,
-     1 FGS2,FF2,FG2,NDI,NSHR,NTENS)
+     1 FGS2,FF2,FG2,alpha,DDTEMP,BETA_T,FR,NDI,NSHR,NTENS)
           
       DEVP2=FDS2*FGS2
      
                   
       CALL GETDSTRESS(alpha,DEP2,DDSTRAN,DDTEMP,DSTRESS2,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG2,FF2,BETA_T,FR,TH_PLAS2,DDTEMP,
-     & FPFR2,NDI,NSHR,NTENS)
+      CALL GETTH_PLAS(FG2,FF2,FKP2,BETA_T,FR,TH_PLAS2,DDTEMP,
+     & NDI,NSHR,NTENS)
       
       Do I=1,NTENS
           ESTRESS(I)=0.5*(DSTRESS2(I)-DSTRESS1(I)) !!!!!!!
           STRESS2(I)=STRESS(I)+0.5*DSTRESS1(I)+0.5*DSTRESS2(I)
-     !!&-0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
+     & -0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
       End Do
               
       FEIE=0.0
@@ -176,7 +172,7 @@ C Second calculation
       
       Do I=1,NTENS       
           STRESS(I)=STRESS(I)+0.5*DSTRESS1(I)+0.5*DSTRESS2(I)
-     & -0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
+     !!& -0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
       End Do
       DEVP=0.5*(DEVP1+DEVP2) !硬化参数更新
       FPC=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)*EXP(-BETA_T*DDTEMP)
@@ -206,19 +202,18 @@ C 更新数据
       FPFP=FN*((FQ/FM/FP)**(FN-1))*(-FQ/FM)/FP/FP+1/FP/LOG(FR)
       FPFQ=FN*((FQ/FM/FP)**(FN-1))/FM/FP
       FATA=FQ/FP
-      FPFR2=LOG(FP/FPC)/LOG(FR)/LOG(FR)*(FRN-FRT)/(FLama-FKapa)
-
       
       FSD=SQRT(FP**2+FQ**2)     
       FPB=FPC*EXP(-((FATA/FM)**FN)*LOG(FR))
       FSDB=SQRT(1+FATA**2)*FPB
-      FKP=(1+FVOID)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB/FSD)**52-
+      FKP=(1+FVOID)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB/FSD)**2-
      1 FATA*FATA)/2.0/FATA
       FDS=(FM*FM*(FSD/FSDB)**2-FATA*FATA)/2.0/FATA 
      
       CALL GETDEP(FP,FQ,STRESS,FDS,FPFP,FPFQ,DE,FKP,DDSDDE,DSTRAN,FGS,
-     1 FF,FG,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG,FF,BETA_T,FR,TH_PLAS,DTEMP,FPFR,NDI,NSHR,NTENS)
+     1 FF,FG,alpha,DTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+      CALL GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,
+     & NDI,NSHR,NTENS)
       STATEV(1)=FVOID2
       STATEV(2)=FPC
       STATEV(3)=TEMP+DTEMP
@@ -274,22 +269,29 @@ C恢复ABAQUS原本的符号
           alpha_s(I)=0.0
       End Do
       Do I=1,NDI
-          alpha_s(I)=alpha*DTEMP/3
+          alpha_s(I)=alpha/3.0
       END DO
       Do I=1,NTENS
           Do J=1,NTENS
-              DS(I)=DS(I)+FDE(I,J)*(DER(J)+alpha_s(J))
+              DS(I)=DS(I)+FDE(I,J)*(DER(J)+alpha_s(J)*DTEMP)
           End Do
       End Do
       End
       
       SUBROUTINE GETDEP(FP,FQ,FSTRESS,FDS,FPFP,FPFQ,FDE,FKP,DEP,DER,FGS,
-     & FF,FG,NDI,NSHR,NTENS)
+     1 FF,FG,alpha,DTEMP,BETA_T,FR,NDI,NSHR,NTENS)
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION FSTRESS(NTENS),FDE(NTENS,NTENS),DEP(NTENS,NTENS),
-     & DER(NTENS)
+     1 DER(NTENS),alpha_s(NTENS)
       DIMENSION FA(NTENS),FB(NTENS),FC(NTENS),FD(NTENS),FE(NTENS),
-     & FG(NTENS),FH(NTENS,NTENS),FI(NTENS)
+     1 FG(NTENS),FH(NTENS,NTENS)
+      
+      Do I=1,NTENS
+          alpha_s(I)=0.0
+      End Do
+      Do I=1,NDI
+          alpha_s(I)=alpha/3.0
+      END DO
       
       Do I=1,NDI
       FA(I)=1.0/3.0
@@ -340,16 +342,14 @@ C恢复ABAQUS原本的符号
           End Do
       End Do
 !unload-reload      
+      FI=0.0
       Do I=1,NTENS
-          FI(I)=0.0 !!!!Stress
-          Do J=1,NTENS
-              FI(I)=FI(I)+DEP(I,J)*DER(J)
-          End Do
-      End Do      
+      FI=FI+FE(I)*alpha_s(I)
+      End Do
       
-      FGS=0.0
+      FGS=0.0+(FI+BETA_T/LOG(FR))*DTEMP/(FKP+FF)
       Do I=1,NTENS
-          FGS=FGS+FD(I)*FI(I)/FKP
+          FGS=FGS+FE(I)*DER(I)/(FKP+FF)
       End Do
       FUNLOAD=0.0
       Do I=1,NTENS
@@ -365,12 +365,12 @@ C恢复ABAQUS原本的符号
       End If
       End
    
-      SUBROUTINE GETTH_PLAS(FG,FF,BETA_T,FR,TH_PLAS,DTEMP,FPFR,
+      SUBROUTINE GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,
      & NDI,NSHR,NTENS)
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION FG(NTENS),TH_PLAS(NTENS)
       Do I=1,NTENS
-          TH_PLAS(I)=FG(I)/FF*(FPFR+BETA_T/LOG(FR))*DTEMP
+          TH_PLAS(I)=FG(I)/(FKP+FF)*BETA_T/LOG(FR)*DTEMP
       End Do
      
       End
@@ -381,12 +381,10 @@ C
       INCLUDE 'ABA_PARAM.INC'
 C
       DIMENSION STATEV(NSTATV),COORDS(NCRDS)
-       !STATEV(1)=0.634 ! OCR=1 Zhou(2015) itatic Clay
-       !STATEV(1)=0.58! OCR=1 Zhou(2017)
-       STATEV(1)=0.879 ! OCR=1 Zhou(2015) Boom Clay
-       !STATEV(1)=0.789 ! OCR=2 Zhou(2015)
-       !STATEV(2)=150 !OCR=1
-       STATEV(2)=150 !OCR=2
+
+
+       STATEV(1)=0.879
+       STATEV(2)=150
        STATEV(3)=20
        !STATEV(4)=100000
       RETURN
