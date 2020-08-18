@@ -72,6 +72,8 @@ C 第一次应力计算
       FPFP=FN*((FQ1/FM/FP1)**(FN-1))*(-FQ1/FM)/FP1/FP1+1/FP1/LOG(FR) !first order derivation of F to p
       FPFQ=FN*((FQ1/FM/FP1)**(FN-1))/FM/FP1 !first order derivation of F to q
       FATA=FQ1/FP1 !应力比
+      FPFR1=LOG(FP1/FPC1)/LOG(FR)/LOG(FR)*(FRN-FRT)/(FLama-FKapa) ! partial F partial r * partial r partial T
+      
       
       FPB1=FPC1*EXP(-((FATA/FM)**FN)*LOG(FR)) !image point 
       FSDB1=SQRT(1+FATA**2)*FPB1 ! distance of image point to the original point
@@ -79,7 +81,7 @@ C 第一次应力计算
       
       FDS1=(FM*FM*(FSD1/FSDB1)**2-FATA*FATA)/2.0/FATA
       FKP1=(1+FVOID1)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB1/FSD1)**2-
-     1 FATA*FATA)/2.0/FATA
+     & FATA*FATA)/2.0/FATA
         
 999   CONTINUE    
       
@@ -89,19 +91,19 @@ C 第一次应力计算
       End Do
 
       CALL GETDEP(FP1,FQ1,STRESS,FDS1,FPFP,FPFQ,DE1,FKP1,DEP1,DDSTRAN,
-     1 FGS1,FF1,FG1,alpha,DDTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+     & FGS1,FF1,FG1,alpha,DDTEMP,BETA_T,FR,FPFR1,NDI,NSHR,NTENS)
             
       DEVP1=FDS1*FGS1 !plastic volumetric STRAIN increment & hardening parameter
       
       FPC2=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)*EXP(-BETA_T*DDTEMP)
   
       CALL GETDSTRESS(alpha,DEP1,DDSTRAN,DDTEMP,DSTRESS1,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG1,FF1,FKP1,BETA_T,FR,TH_PLAS1,DDTEMP,
+      CALL GETTH_PLAS(FG1,FF1,FKP1,BETA_T,FR,TH_PLAS1,DDTEMP,FPFR1,
      & NDI,NSHR,NTENS)
  
       Do I=1,NTENS
           STRESS1(I)=STRESS(I)+DSTRESS1(I)
-     !!& -TH_PLAS1(I)
+     !!&-TH_PLAS1(I)
       End Do
       
       DEV=(DDSTRAN(1)+DDSTRAN(2)+DDSTRAN(3)) !volumetric strain
@@ -118,7 +120,10 @@ C 第二次应力计算
       
       FPFP=FN*((FQ2/FM/FP2)**(FN-1))*(-FQ2/FM)/FP2/FP2+1/FP2/LOG(FR)
       FPFQ=FN*((FQ2/FM/FP2)**(FN-1))/FM/FP2
+
       FATA=FQ2/FP2
+      FPFR2=LOG(FP2/FPC2)/LOG(FR)/LOG(FR)*(FRN-FRT)/(FLama-FKapa)
+
       
       FSD2=SQRT(FP2**2+FQ2**2) 
       FPB2=FPC2*EXP(-((FATA/FM)**FN)*LOG(FR))
@@ -130,19 +135,19 @@ C 第二次应力计算
       FDS2=(FM*FM*(FSD2/FSDB2)**2-FATA*FATA)/2.0/FATA
   
       CALL GETDEP(FP2,FQ2,STRESS1,FDS2,FPFP,FPFQ,DE2,FKP2,DEP2,DDSTRAN,
-     1 FGS2,FF2,FG2,alpha,DDTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+     1 FGS2,FF2,FG2,alpha,DDTEMP,BETA_T,FR,FPFR2,NDI,NSHR,NTENS)
           
       DEVP2=FDS2*FGS2
      
                   
       CALL GETDSTRESS(alpha,DEP2,DDSTRAN,DDTEMP,DSTRESS2,NDI,NSHR,NTENS)
       CALL GETTH_PLAS(FG2,FF2,FKP2,BETA_T,FR,TH_PLAS2,DDTEMP,
-     & NDI,NSHR,NTENS)
+     & FPFR2,NDI,NSHR,NTENS)
       
       Do I=1,NTENS
           ESTRESS(I)=0.5*(DSTRESS2(I)-DSTRESS1(I)) !!!!!!!
           STRESS2(I)=STRESS(I)+0.5*DSTRESS1(I)+0.5*DSTRESS2(I)
-     !!& -0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
+     !!&-0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
       End Do
               
       FEIE=0.0
@@ -202,17 +207,19 @@ C 更新数据
       FPFP=FN*((FQ/FM/FP)**(FN-1))*(-FQ/FM)/FP/FP+1/FP/LOG(FR)
       FPFQ=FN*((FQ/FM/FP)**(FN-1))/FM/FP
       FATA=FQ/FP
+      FPFR2=LOG(FP/FPC)/LOG(FR)/LOG(FR)*(FRN-FRT)/(FLama-FKapa)
+
       
       FSD=SQRT(FP**2+FQ**2)     
       FPB=FPC*EXP(-((FATA/FM)**FN)*LOG(FR))
       FSDB=SQRT(1+FATA**2)*FPB
       FKP=(1+FVOID)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB/FSD)**2-
-     1 FATA*FATA)/2.0/FATA
+     & FATA*FATA)/2.0/FATA
       FDS=(FM*FM*(FSD/FSDB)**2-FATA*FATA)/2.0/FATA 
      
       CALL GETDEP(FP,FQ,STRESS,FDS,FPFP,FPFQ,DE,FKP,DDSDDE,DSTRAN,FGS,
-     1 FF,FG,alpha,DTEMP,BETA_T,FR,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,
+     & FF,FG,alpha,DTEMP,BETA_T,FR,FPFR,NDI,NSHR,NTENS)
+      CALL GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,FPFR,
      & NDI,NSHR,NTENS)
       STATEV(1)=FVOID2
       STATEV(2)=FPC
@@ -269,28 +276,28 @@ C恢复ABAQUS原本的符号
           alpha_s(I)=0.0
       End Do
       Do I=1,NDI
-          alpha_s(I)=alpha/3.0
+          alpha_s(I)=alpha*DTEMP/3
       END DO
       Do I=1,NTENS
           Do J=1,NTENS
-              DS(I)=DS(I)+FDE(I,J)*(DER(J)+alpha_s(J)*DTEMP)
+              DS(I)=DS(I)+FDE(I,J)*(DER(J)+alpha_s(J))
           End Do
       End Do
       End
       
       SUBROUTINE GETDEP(FP,FQ,FSTRESS,FDS,FPFP,FPFQ,FDE,FKP,DEP,DER,FGS,
-     1 FF,FG,alpha,DTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+     & FF,FG,alpha,FDTEMP,BETA_T,FR,FPFR,NDI,NSHR,NTENS)
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION FSTRESS(NTENS),FDE(NTENS,NTENS),DEP(NTENS,NTENS),
-     1 DER(NTENS),alpha_s(NTENS)
+     & DER(NTENS)
       DIMENSION FA(NTENS),FB(NTENS),FC(NTENS),FD(NTENS),FE(NTENS),
-     1 FG(NTENS),FH(NTENS,NTENS)
+     & FG(NTENS),FH(NTENS,NTENS),FI(NTENS),alpha_s(NTENS)
       
       Do I=1,NTENS
           alpha_s(I)=0.0
       End Do
       Do I=1,NDI
-          alpha_s(I)=alpha/3.0
+          alpha_s(I)=alpha*FDTEMP/3
       END DO
       
       Do I=1,NDI
@@ -342,14 +349,23 @@ C恢复ABAQUS原本的符号
           End Do
       End Do
 !unload-reload      
-      FI=0.0
       Do I=1,NTENS
-      FI=FI+FE(I)*alpha_s(I)
-      End Do
+          FI(I)=0.0 !!!!Stress
+          Do J=1,NTENS
+              FI(I)=FI(I)+DEP(I,J)*DER(J)
+          End Do
+      End Do 
       
-      FGS=0.0+(FI+BETA_T/LOG(FR))*DTEMP/(FKP+FF)
+      FJ=0.0
       Do I=1,NTENS
-          FGS=FGS+FE(I)*DER(I)/(FKP+FF)
+          FJ=FJ+FE(I)*alpha_s(I)
+      End Do
+           
+      FGS=0.0
+      Do I=1,NTENS
+          !FGS=FGS+FD(I)*FI(I)/FKP
+          FGS=FGS+(FE(I)*DER(I))/(FKP+FF)
+     !!& +(FJ+FPFR+BETA_T/LOG(FR))/(FKP+FF)
       End Do
       FUNLOAD=0.0
       Do I=1,NTENS
@@ -365,12 +381,12 @@ C恢复ABAQUS原本的符号
       End If
       End
    
-      SUBROUTINE GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,
+      SUBROUTINE GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,FPFR,
      & NDI,NSHR,NTENS)
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION FG(NTENS),TH_PLAS(NTENS)
       Do I=1,NTENS
-          TH_PLAS(I)=FG(I)/(FKP+FF)*BETA_T/LOG(FR)*DTEMP
+          TH_PLAS(I)=FG(I)/(FF+FKP)*(FPFR+BETA_T/LOG(FR))*DTEMP
       End Do
      
       End
@@ -382,8 +398,8 @@ C
 C
       DIMENSION STATEV(NSTATV),COORDS(NCRDS)
 
-
-       STATEV(1)=0.879
+       STATEV(1)=0.58! OCR=1 Zhou(2017)
+       !STATEV(1)=0.879
        STATEV(2)=150
        STATEV(3)=20
        !STATEV(4)=100000

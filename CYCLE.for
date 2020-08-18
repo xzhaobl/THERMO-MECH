@@ -89,19 +89,18 @@ C 第一次应力计算
       End Do
 
       CALL GETDEP(FP1,FQ1,STRESS,FDS1,FPFP,FPFQ,DE1,FKP1,DEP1,DDSTRAN,
-     1 FGS1,FF1,FG1,alpha,DDTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+     1 FGS1,FF1,FG1,NDI,NSHR,NTENS)
             
       DEVP1=FDS1*FGS1 !plastic volumetric STRAIN increment & hardening parameter
       
       FPC2=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)*EXP(-BETA_T*DDTEMP)
   
       CALL GETDSTRESS(alpha,DEP1,DDSTRAN,DDTEMP,DSTRESS1,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG1,FF1,FKP1,BETA_T,FR,TH_PLAS1,DDTEMP,
-     & NDI,NSHR,NTENS)
+      CALL GETTH_PLAS(FG1,FF1,BETA_T,FR,TH_PLAS1,DDTEMP,NDI,NSHR,NTENS)
  
       Do I=1,NTENS
           STRESS1(I)=STRESS(I)+DSTRESS1(I)
-     !!& -TH_PLAS1(I)
+     !!&-TH_PLAS1(I)
       End Do
       
       DEV=(DDSTRAN(1)+DDSTRAN(2)+DDSTRAN(3)) !volumetric strain
@@ -130,19 +129,18 @@ C 第二次应力计算
       FDS2=(FM*FM*(FSD2/FSDB2)**2-FATA*FATA)/2.0/FATA
   
       CALL GETDEP(FP2,FQ2,STRESS1,FDS2,FPFP,FPFQ,DE2,FKP2,DEP2,DDSTRAN,
-     1 FGS2,FF2,FG2,alpha,DDTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+     1 FGS2,FF2,FG2,NDI,NSHR,NTENS)
           
       DEVP2=FDS2*FGS2
      
                   
       CALL GETDSTRESS(alpha,DEP2,DDSTRAN,DDTEMP,DSTRESS2,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG2,FF2,FKP2,BETA_T,FR,TH_PLAS2,DDTEMP,
-     & NDI,NSHR,NTENS)
+      CALL GETTH_PLAS(FG2,FF2,BETA_T,FR,TH_PLAS2,DDTEMP,NDI,NSHR,NTENS)
       
       Do I=1,NTENS
           ESTRESS(I)=0.5*(DSTRESS2(I)-DSTRESS1(I)) !!!!!!!
           STRESS2(I)=STRESS(I)+0.5*DSTRESS1(I)+0.5*DSTRESS2(I)
-     !!& -0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
+     !!&-0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
       End Do
               
       FEIE=0.0
@@ -211,9 +209,8 @@ C 更新数据
       FDS=(FM*FM*(FSD/FSDB)**2-FATA*FATA)/2.0/FATA 
      
       CALL GETDEP(FP,FQ,STRESS,FDS,FPFP,FPFQ,DE,FKP,DDSDDE,DSTRAN,FGS,
-     1 FF,FG,alpha,DTEMP,BETA_T,FR,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,
-     & NDI,NSHR,NTENS)
+     1 FF,FG,NDI,NSHR,NTENS)
+      CALL GETTH_PLAS(FG,FF,BETA_T,FR,TH_PLAS,DTEMP,NDI,NSHR,NTENS)
       STATEV(1)=FVOID2
       STATEV(2)=FPC
       STATEV(3)=TEMP+DTEMP
@@ -269,29 +266,22 @@ C恢复ABAQUS原本的符号
           alpha_s(I)=0.0
       End Do
       Do I=1,NDI
-          alpha_s(I)=alpha/3.0
+          alpha_s(I)=alpha*DTEMP
       END DO
       Do I=1,NTENS
           Do J=1,NTENS
-              DS(I)=DS(I)+FDE(I,J)*(DER(J)+alpha_s(J)*DTEMP)
+              DS(I)=DS(I)+FDE(I,J)*(DER(J)+alpha_s(J))
           End Do
       End Do
       End
       
       SUBROUTINE GETDEP(FP,FQ,FSTRESS,FDS,FPFP,FPFQ,FDE,FKP,DEP,DER,FGS,
-     1 FF,FG,alpha,DTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+     1 FF,FG,NDI,NSHR,NTENS)
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION FSTRESS(NTENS),FDE(NTENS,NTENS),DEP(NTENS,NTENS),
-     1 DER(NTENS),alpha_s(NTENS)
+     1 DER(NTENS)
       DIMENSION FA(NTENS),FB(NTENS),FC(NTENS),FD(NTENS),FE(NTENS),
-     1 FG(NTENS),FH(NTENS,NTENS)
-      
-      Do I=1,NTENS
-          alpha_s(I)=0.0
-      End Do
-      Do I=1,NDI
-          alpha_s(I)=alpha/3.0
-      END DO
+     1 FG(NTENS),FH(NTENS,NTENS),FI(NTENS)
       
       Do I=1,NDI
       FA(I)=1.0/3.0
@@ -342,14 +332,16 @@ C恢复ABAQUS原本的符号
           End Do
       End Do
 !unload-reload      
-      FI=0.0
       Do I=1,NTENS
-      FI=FI+FE(I)*alpha_s(I)
-      End Do
+          FI(I)=0.0 !!!!Stress
+          Do J=1,NTENS
+              FI(I)=FI(I)+DEP(I,J)*DER(J)
+          End Do
+      End Do      
       
-      FGS=0.0+(FI+BETA_T/LOG(FR))*DTEMP/(FKP+FF)
+      FGS=0.0
       Do I=1,NTENS
-          FGS=FGS+FE(I)*DER(I)/(FKP+FF)
+          FGS=FGS+FD(I)*FI(I)/FKP
       End Do
       FUNLOAD=0.0
       Do I=1,NTENS
@@ -365,12 +357,11 @@ C恢复ABAQUS原本的符号
       End If
       End
    
-      SUBROUTINE GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,
-     & NDI,NSHR,NTENS)
+      SUBROUTINE GETTH_PLAS(FG,FF,BETA_T,FR,TH_PLAS,DTEMP,NDI,NSHR,NTENS)
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION FG(NTENS),TH_PLAS(NTENS)
       Do I=1,NTENS
-          TH_PLAS(I)=FG(I)/(FKP+FF)*BETA_T/LOG(FR)*DTEMP
+          TH_PLAS(I)=FG(I)/FF*BETA_T/LOG(FR)*DTEMP
       End Do
      
       End
@@ -382,8 +373,8 @@ C
 C
       DIMENSION STATEV(NSTATV),COORDS(NCRDS)
 
-
-       STATEV(1)=0.879
+       !STATEV(1)=0.605 !zhou2017
+       STATEV(1)=0.879 !zhou2015
        STATEV(2)=150
        STATEV(3)=20
        !STATEV(4)=100000

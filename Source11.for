@@ -5,7 +5,7 @@
      4 CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,JSTEP,KINC)
 C
       INCLUDE 'ABA_PARAM.INC'
-CCCC
+C
       CHARACTER*80 CMNAME
       DIMENSION STRESS(NTENS),STATEV(NSTATV),
      1 DDSDDE(NTENS,NTENS),DDSDDT(NTENS),DRPLDE(NTENS),
@@ -40,6 +40,7 @@ C INPUT MATERIAL PARAMETERS
       FRN=PROPS(8)
       FRT=PROPS(9)
       alpha=PROPS(10)
+      nc=PROPS(11)
 
       FR=EXP((FN0-FGA0-(FRN-FRT)*DTEMP)/(FLama-FKapa)) !
       BETA_T=(FRN)/(FLama-FKapa)
@@ -57,7 +58,7 @@ C LOOP BEGIN
       FVOID1=STATEV(1)
       FPC1=STATEV(2)
     
-C  
+C 第一次应力计算     
       CALL SINV(STRESS,SINV1,SINV2,NDI,NSHR)
       
       FP1=SINV1 !p
@@ -79,7 +80,7 @@ C
       Ratio_1=FSDB1/FSD1
       
       FDS1=(FM*FM*(FSD1/FSDB1)**2-FATA*FATA)/2.0/FATA
-      FKP1=(1+FVOID1)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB1/FSD1)**52-
+      FKP1=(1+FVOID1)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB1/FSD1)**(2+nc)-
      & FATA*FATA)/2.0/FATA
         
 999   CONTINUE    
@@ -88,18 +89,25 @@ C
           DDSTRAN(I)=DSTRAN(I)*FDTIME
           DDTEMP=DTEMP*FDTIME         
       End Do
+      
+      if (DDTEMP.LT.1e-5)alpha=0.0
 
       CALL GETDEP(FP1,FQ1,STRESS,FDS1,FPFP,FPFQ,DE1,FKP1,DEP1,DDSTRAN,
      & FGS1,FF1,FG1,NDI,NSHR,NTENS)
             
       DEVP1=FDS1*FGS1 !plastic volumetric STRAIN increment & hardening parameter
       
+      !If(DDTEMP.GT.SSTOL)Then
       FPC2=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)*EXP(-BETA_T*DDTEMP)
+      !Else
+      ! FPC2=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)
+      !End if
   
       CALL GETDSTRESS(alpha,DEP1,DDSTRAN,DDTEMP,DSTRESS1,NDI,NSHR,NTENS)
       CALL GETTH_PLAS(FG1,FF1,BETA_T,FR,TH_PLAS1,DDTEMP,FPFR1,
      & NDI,NSHR,NTENS)
- 
+      
+      
       Do I=1,NTENS
           STRESS1(I)=STRESS(I)+DSTRESS1(I)
      !!&-TH_PLAS1(I)
@@ -108,7 +116,7 @@ C
       DEV=(DDSTRAN(1)+DDSTRAN(2)+DDSTRAN(3)) !volumetric strain
       FVOID2=EXP(-DEV)*(1+FVOID1)-1 !对数应变&true strain
      & +alpha*DDTEMP
-C Second calculation
+C 第二次应力计算 
       CALL SINV(STRESS,SINV1,SINV2,NDI,NSHR)
       FP2=SINV1
       FQ2=SINV2
@@ -129,7 +137,7 @@ C Second calculation
       FSDB2=SQRT(1+FATA**2)*FPB2
       Ratio_2=FSDB2/FSD2
      
-      FKP2=(1+FVOID2)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB2/FSD2)**52-
+      FKP2=(1+FVOID2)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB2/FSD2)**(nc+2)-
      1 FATA*FATA)/2.0/FATA
       FDS2=(FM*FM*(FSD2/FSDB2)**2-FATA*FATA)/2.0/FATA
   
@@ -179,7 +187,11 @@ C Second calculation
      & -0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
       End Do
       DEVP=0.5*(DEVP1+DEVP2) !硬化参数更新
+      !If(DDTEMP.GT.SSTOL)Then
       FPC=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)*EXP(-BETA_T*DDTEMP)
+      !Else
+      !FPC=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)
+      !end if
       
       STATEV(1)=FVOID2
       STATEV(2)=FPC
@@ -212,7 +224,7 @@ C 更新数据
       FSD=SQRT(FP**2+FQ**2)     
       FPB=FPC*EXP(-((FATA/FM)**FN)*LOG(FR))
       FSDB=SQRT(1+FATA**2)*FPB
-      FKP=(1+FVOID)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB/FSD)**52-
+      FKP=(1+FVOID)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB/FSD)**(nc+2)-
      1 FATA*FATA)/2.0/FATA
       FDS=(FM*FM*(FSD/FSDB)**2-FATA*FATA)/2.0/FATA 
      
@@ -353,7 +365,7 @@ C恢复ABAQUS原本的符号
       End Do
       FUNLOAD=0.0
       Do I=1,NTENS
-          FUNLOAD=FUNLOAD+FD(I)*DER(I)
+          FUNLOAD=FUNLOAD+FD(I)*FI(I)
       End Do
       If(FUNLOAD.LT.0)Then
           Do I=1,NTENS
@@ -370,7 +382,11 @@ C恢复ABAQUS原本的符号
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION FG(NTENS),TH_PLAS(NTENS)
       Do I=1,NTENS
-          TH_PLAS(I)=FG(I)/FF*(FPFR+BETA_T/LOG(FR))*DTEMP
+        TH_PLAS(I)=0.0
+      End Do
+    
+      Do I=1,NTENS
+       If(DTEMP.GE.1e-5) TH_PLAS(I)=FG(I)/FF*(FPFR+BETA_T/LOG(FR))*DTEMP
       End Do
      
       End
@@ -381,12 +397,12 @@ C
       INCLUDE 'ABA_PARAM.INC'
 C
       DIMENSION STATEV(NSTATV),COORDS(NCRDS)
-       !STATEV(1)=0.634 ! OCR=1 Zhou(2015) itatic Clay
+       STATEV(1)=0.634 ! OCR=1 Zhou(2015) itatic Clay
        !STATEV(1)=0.58! OCR=1 Zhou(2017)
-       STATEV(1)=0.879 ! OCR=1 Zhou(2015) Boom Clay
+       !STATEV(1)=0.879 ! OCR=1 Zhou(2015) Boom Clay
        !STATEV(1)=0.789 ! OCR=2 Zhou(2015)
-       !STATEV(2)=150 !OCR=1
-       STATEV(2)=150 !OCR=2
+       STATEV(2)=150 !OCR=1
+       !STATEV(2)=300 !OCR=2
        STATEV(3)=20
        !STATEV(4)=100000
       RETURN

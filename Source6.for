@@ -15,11 +15,11 @@ C
 C USER-DEFINED MATRIX     
       DIMENSION DE1(NTENS,NTENS),DE2(NTENS,NTENS),DE(NTENS,NTENS)
       DIMENSION DSTRESS1(NTENS),DSTRESS2(NTENS),STRESS1(NTENS),
-     1 STRESS2(NTENS)
+     1STRESS2(NTENS)
       DIMENSION FG1(NTENS),FG2(NTENS),FG(NTENS)
       DIMENSION DEP1(NTENS,NTENS),DEP2(NTENS,NTENS)
       DIMENSION DDSTRAN(NTENS),ESTRESS(NTENS)
-      DIMENSION TH_PLAS(NTENS),TH_PLAS1(NTENS),TH_PLAS2(NTENS)
+      DIMENSION TEMP_ST(NTENS),TEMP_ST1(NTENS),TEMP_ST2(NTENS)
 C DEBUG      
       !Logical :: firstrun=.true.
       !  Integer :: tempvar
@@ -39,7 +39,6 @@ C INPUT MATERIAL PARAMETERS
       FN=PROPS(7)
       FRN=PROPS(8)
       FRT=PROPS(9)
-      alpha=PROPS(10)
 
       FR=EXP((FN0-FGA0-(FRN-FRT)*DTEMP)/(FLama-FKapa))
       BETA_T=(FRN)/(FLama-FKapa)
@@ -79,7 +78,7 @@ C 第一次应力计算
       
       FDS1=(FM*FM*(FSD1/FSDB1)**2-FATA*FATA)/2.0/FATA
       FKP1=(1+FVOID1)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB1/FSD1)**2-
-     1 FATA*FATA)/2.0/FATA
+     1FATA*FATA)/2.0/FATA
         
 999   CONTINUE    
       
@@ -89,24 +88,21 @@ C 第一次应力计算
       End Do
 
       CALL GETDEP(FP1,FQ1,STRESS,FDS1,FPFP,FPFQ,DE1,FKP1,DEP1,DDSTRAN,
-     1 FGS1,FF1,FG1,alpha,DDTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+     1FGS1,FF1,FG1,NDI,NSHR,NTENS)
             
       DEVP1=FDS1*FGS1 !plastic volumetric STRAIN increment & hardening parameter
       
       FPC2=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)*EXP(-BETA_T*DDTEMP)
   
-      CALL GETDSTRESS(alpha,DEP1,DDSTRAN,DDTEMP,DSTRESS1,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG1,FF1,FKP1,BETA_T,FR,TH_PLAS1,DDTEMP,
-     & NDI,NSHR,NTENS)
+      CALL GETDSTRESS(DEP1,DDSTRAN,DSTRESS1,NDI,NSHR,NTENS)
+      CALL GETTEMP_ST(FG1,FF1,BETA_T,FR,TEMP_ST1,DDTEMP,NDI,NSHR,NTENS)
  
       Do I=1,NTENS
-          STRESS1(I)=STRESS(I)+DSTRESS1(I)
-     !!& -TH_PLAS1(I)
+          STRESS1(I)=STRESS(I)+DSTRESS1(I)-TEMP_ST1(I)
       End Do
       
       DEV=(DDSTRAN(1)+DDSTRAN(2)+DDSTRAN(3)) !volumetric strain
       FVOID2=EXP(-DEV)*(1+FVOID1)-1 !对数应变&true strain
-     & +alpha*DDTEMP
 C 第二次应力计算 
       CALL SINV(STRESS,SINV1,SINV2,NDI,NSHR)
       FP2=SINV1
@@ -126,23 +122,22 @@ C 第二次应力计算
       Ratio_2=FSDB2/FSD2
      
       FKP2=(1+FVOID2)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB2/FSD2)**2-
-     1 FATA*FATA)/2.0/FATA
+     1FATA*FATA)/2.0/FATA
       FDS2=(FM*FM*(FSD2/FSDB2)**2-FATA*FATA)/2.0/FATA
   
       CALL GETDEP(FP2,FQ2,STRESS1,FDS2,FPFP,FPFQ,DE2,FKP2,DEP2,DDSTRAN,
-     1 FGS2,FF2,FG2,alpha,DDTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+     1FGS2,FF2,FG2,NDI,NSHR,NTENS)
           
       DEVP2=FDS2*FGS2
      
                   
-      CALL GETDSTRESS(alpha,DEP2,DDSTRAN,DDTEMP,DSTRESS2,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG2,FF2,FKP2,BETA_T,FR,TH_PLAS2,DDTEMP,
-     & NDI,NSHR,NTENS)
+      CALL GETDSTRESS(DEP2,DDSTRAN,DSTRESS2,NDI,NSHR,NTENS)
+      CALL GETTEMP_ST(FG2,FF2,BETA_T,FR,TEMP_ST2,DDTEMP,NDI,NSHR,NTENS)
       
       Do I=1,NTENS
-          ESTRESS(I)=0.5*(DSTRESS2(I)-DSTRESS1(I)) !!!!!!!
+          ESTRESS(I)=0.5*(DSTRESS2(I)-DSTRESS1(I))
           STRESS2(I)=STRESS(I)+0.5*DSTRESS1(I)+0.5*DSTRESS2(I)
-     !!& -0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
+     &-0.5*TEMP_ST1(I)-0.5*TEMP_ST2(I)
       End Do
               
       FEIE=0.0
@@ -172,7 +167,6 @@ C 第二次应力计算
       
       Do I=1,NTENS       
           STRESS(I)=STRESS(I)+0.5*DSTRESS1(I)+0.5*DSTRESS2(I)
-     & -0.5*TH_PLAS1(I)-0.5*TH_PLAS2(I)
       End Do
       DEVP=0.5*(DEVP1+DEVP2) !硬化参数更新
       FPC=FPC1*EXP((1+FVOID1)/(FLAMA-FKAPA)*DEVP1)*EXP(-BETA_T*DDTEMP)
@@ -180,6 +174,13 @@ C 第二次应力计算
       STATEV(1)=FVOID2
       STATEV(2)=FPC
       
+      !if (NOEL==1)then
+      !    if (NPT==1) then
+      !    Open(101,file='E:\ratio.txt',position='append')
+      !    Write(101,*),'Ratio_1',Ratio_1,'Ratio_2',Ratio_2
+      !    Close(101)
+      !    end if
+      !end if 
       
       If(FTIME.LT.1)Then
       If(FDTIME.GT.(1-FTIME))Then
@@ -207,29 +208,16 @@ C 更新数据
       FPB=FPC*EXP(-((FATA/FM)**FN)*LOG(FR))
       FSDB=SQRT(1+FATA**2)*FPB
       FKP=(1+FVOID)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB/FSD)**2-
-     1 FATA*FATA)/2.0/FATA
+     1FATA*FATA)/2.0/FATA
       FDS=(FM*FM*(FSD/FSDB)**2-FATA*FATA)/2.0/FATA 
      
-      CALL GETDEP(FP,FQ,STRESS,FDS,FPFP,FPFQ,DE,FKP,DDSDDE,DSTRAN,FGS,
-     1 FF,FG,alpha,DTEMP,BETA_T,FR,NDI,NSHR,NTENS)
-      CALL GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,
-     & NDI,NSHR,NTENS)
+      CALL GETDEP(FP,FQ,STRESS,FDS,FPFP,FPFQ,DE,FKP,DDSDDE,DSTRAN,FGS
+     1,FF,FG,NDI,NSHR,NTENS)
+
       STATEV(1)=FVOID2
       STATEV(2)=FPC
       STATEV(3)=TEMP+DTEMP
       STATEV(4)=FGMOD
-     !! if (NOEL==1)then
-     !!     if (NPT==1) then
-     !!     !Open(101,file='E:\ratio.txt',position='append')
-     !!     !Write(101,*),'Ratio_1',Ratio_1,'Ratio_2',Ratio_2
-     !!     !Open(101,file='E:\strain.txt',position='append')
-     !!     Open(101,file='E:\th_plas.txt',position='append')  
-     !!!!     Write(101,*),'time',TIME(1),
-     !!!!&'strain',STRAN(1),'Dstrain',DSTRAN(1)
-     !!     Write(101,*),'time',TIME(1),'TH_PLAST',TH_PLAS(1)
-     !!     Close(101)
-     !!     end if
-     !! end if 
 C恢复ABAQUS原本的符号
       Do I=1,NDI
           STRESS(I)=-STRESS(I)
@@ -260,38 +248,27 @@ C恢复ABAQUS原本的符号
       End Do
       End 
       
-      SUBROUTINE GETDSTRESS(alpha,FDE,DER,DTEMP,DS,NDI,NSHR,NTENS)
+      SUBROUTINE GETDSTRESS(FDE,DER,DS,NDI,NSHR,NTENS)
       INCLUDE 'ABA_PARAM.INC'
-      DIMENSION FDE(NTENS,NTENS),DER(NTENS),DS(NTENS),alpha_s(NTENS)
+      DIMENSION FDE(NTENS,NTENS),DER(NTENS),DS(NTENS)
      
       Do I=1,NTENS
           DS(I)=0.0
-          alpha_s(I)=0.0
       End Do
-      Do I=1,NDI
-          alpha_s(I)=alpha/3.0
-      END DO
       Do I=1,NTENS
           Do J=1,NTENS
-              DS(I)=DS(I)+FDE(I,J)*(DER(J)+alpha_s(J)*DTEMP)
+              DS(I)=DS(I)+FDE(I,J)*DER(J)
           End Do
       End Do
       End
       
       SUBROUTINE GETDEP(FP,FQ,FSTRESS,FDS,FPFP,FPFQ,FDE,FKP,DEP,DER,FGS,
-     1 FF,FG,alpha,DTEMP,BETA_T,FR,NDI,NSHR,NTENS)
+     1FF,FG,NDI,NSHR,NTENS)
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION FSTRESS(NTENS),FDE(NTENS,NTENS),DEP(NTENS,NTENS),
-     1 DER(NTENS),alpha_s(NTENS)
+     1DER(NTENS)
       DIMENSION FA(NTENS),FB(NTENS),FC(NTENS),FD(NTENS),FE(NTENS),
-     1 FG(NTENS),FH(NTENS,NTENS)
-      
-      Do I=1,NTENS
-          alpha_s(I)=0.0
-      End Do
-      Do I=1,NDI
-          alpha_s(I)=alpha/3.0
-      END DO
+     1FG(NTENS),FH(NTENS,NTENS),FI(NTENS)
       
       Do I=1,NDI
       FA(I)=1.0/3.0
@@ -342,14 +319,16 @@ C恢复ABAQUS原本的符号
           End Do
       End Do
 !unload-reload      
-      FI=0.0
       Do I=1,NTENS
-      FI=FI+FE(I)*alpha_s(I)
-      End Do
+          FI(I)=0.0 !!!!Stress
+          Do J=1,NTENS
+              FI(I)=FI(I)+DEP(I,J)*DER(J)
+          End Do
+      End Do      
       
-      FGS=0.0+(FI+BETA_T/LOG(FR))*DTEMP/(FKP+FF)
+      FGS=0.0
       Do I=1,NTENS
-          FGS=FGS+FE(I)*DER(I)/(FKP+FF)
+          FGS=FGS+FD(I)*FI(I)/FKP
       End Do
       FUNLOAD=0.0
       Do I=1,NTENS
@@ -365,12 +344,11 @@ C恢复ABAQUS原本的符号
       End If
       End
    
-      SUBROUTINE GETTH_PLAS(FG,FF,FKP,BETA_T,FR,TH_PLAS,DTEMP,
-     & NDI,NSHR,NTENS)
+      SUBROUTINE GETTEMP_ST(FG,FF,BETA_T,FR,TEMP_ST,DTEMP,NDI,NSHR,NTENS)
       INCLUDE 'ABA_PARAM.INC'
-      DIMENSION FG(NTENS),TH_PLAS(NTENS)
+      DIMENSION FG(NTENS),TEMP_ST(NTENS)
       Do I=1,NTENS
-          TH_PLAS(I)=FG(I)/(FKP+FF)*BETA_T/LOG(FR)*DTEMP
+          TEMP_ST(I)=FG(I)/FF*BETA_T/LOG(FR)*DTEMP
       End Do
      
       End
@@ -383,9 +361,57 @@ C
       DIMENSION STATEV(NSTATV),COORDS(NCRDS)
 
 
-       STATEV(1)=0.879
+       STATEV(1)=0.63
        STATEV(2)=150
        STATEV(3)=20
        !STATEV(4)=100000
       RETURN
       End
+      
+     !! SUBROUTINE CORRECTION(FSTRESS,FPFP,FPFQ,FBOUND,FDS,FKP,FDE,
+     !!1CORRECT_ST,CORRECT_EVP,NDI,NSHR,NTENS)
+     !! INCLUDE 'ABA_PARAM.INC'
+     !! DIMENSION FSTRESS(NTENS),FDE(NTENS,NTENS)
+     !! DIMENSION CORRECT_ST(NTENS)
+     !! DIMENSION CA(NTENS),CB(NTENS),CC(NTENS),CD(NTENS),CE(NTENS),
+     !!1CG(NTENS),CH(NTENS,NTENS),CI(NTENS)
+     !! 
+     !! Do I=1,NDI
+     !! CA(I)=1.0/3.0
+     !! End Do
+     !! Do I=1,NSHR
+     !! CA(NDI+I)=0.0
+     !! End Do
+     !! 
+     !! CALL SINV(FSTRESS,SINV1,SINV2,NDI,NSHR)
+     !! Do I=1,NDI
+     !! CB(I)=3.0/2.0/SINV2*(FSTRESS(I)-SINV1)
+     !! End Do
+     !! Do I=1,NSHR
+     !! CB(NDI+I)=3.0/2.0/SINV2*FSTRESS(NDI+I)
+     !! End Do            
+     !! Do I=1,NTENS
+     !!     CC(I)=FDS*CA(I)+CB(I)
+     !!     CD(I)=FPFP*CA(I)+FPFQ*CB(I)
+     !! End Do        
+     !! Do I=1,NTENS
+     !!     CE(I)=0.0
+     !!     Do J=1,NTENS
+     !!         CE(I)=CE(I)+CD(J)*FDE(I,J)
+     !!     End Do
+     !! End Do
+     !!
+     !! CF=0.0
+     !! Do I=1,NTENS
+     !! CF=CF+CE(I)*CC(I)
+     !! End Do
+     !! 
+     !! FGS_C=FBOUND/(FKP+CF)
+     !! 
+     !! Do I=1,NTENS
+     !!     CORRECT_ST(I)=0
+     !!     Do J=1,NTENS
+     !!     CORRECT_ST(I)=CORRECT_ST(I)-FDE(I,J)*CC(J)*FGS_C
+     !!     End Do
+     !! End Do
+     !! End
