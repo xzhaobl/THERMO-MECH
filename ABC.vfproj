@@ -51,6 +51,7 @@
 		<File RelativePath=".\Source10.for"/>
 		<File RelativePath=".\Source11.for"/></Filter>
 		<File RelativePath=".\CYCLE.for"/>
+		<File RelativePath=".\foundation.for"/>
 		<File RelativePath=".\HELLO.for"/>
 		<File RelativePath=".\MCC.for"/>
 		<File RelativePath=".\Source1.for"/>
