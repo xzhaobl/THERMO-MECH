@@ -366,8 +366,25 @@ C
       DIMENSION STATEV(NSTATV),COORDS(NCRDS)
 
 
-       STATEV(1)=1.248
-       STATEV(2)=150
+       !STATEV(1)=1.248
+       !STATEV(2)=150
+      N1=1.67
+      E1=N1-1
+      Tao1=1.59
+      FLAMA=0.09
+      FKAPPA=0.01
+      FM=1.0
+      !n=1.0
+      !Fr=exp((N1-Tao1)/(FLAMA-FKAPPA))
+      Y=COORDS(2)
+      VSTRESS=18*(50-Y)+1
+      HSTRESS=0.538*VSTRESS
+      Q=VSTRESS-HSTRESS
+      P=(VSTRESS+2.0*HSTRESS)/3.0
+      STATEV(2)=Q*Q/FM/FM/P+P
+      STATEV(1)=E1-FLAMA*LOG(STATEV(2)/101)
+     !!& +FK*LOG(Q*Q/FM/FM/P/P+1.0)
+      STATEV(3)=20
 
       RETURN
       End
