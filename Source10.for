@@ -40,6 +40,7 @@ C INPUT MATERIAL PARAMETERS
       FRN=PROPS(8)
       FRT=PROPS(9)
       alpha=PROPS(10)
+      nc=PROPS(11)
 
       FR=EXP((FN0-FGA0-(FRN-FRT)*DTEMP)/(FLama-FKapa))
       BETA_T=(FRN)/(FLama-FKapa)
@@ -78,8 +79,8 @@ C 第一次应力计算
       Ratio_1=FSDB1/FSD1
       
       FDS1=(FM*FM*(FSD1/FSDB1)**2-FATA*FATA)/2.0/FATA
-      FKP1=(1+FVOID1)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB1/FSD1)**2-
-     1 FATA*FATA)/2.0/FATA
+      FKP1=(1+FVOID1)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB1/FSD1)**(2+nc)-
+     & FATA*FATA)/2.0/FATA
         
 999   CONTINUE    
       
@@ -87,7 +88,8 @@ C 第一次应力计算
           DDSTRAN(I)=DSTRAN(I)*FDTIME
           DDTEMP=DTEMP*FDTIME         
       End Do
-
+      if (DDTEMP.LT.1e-5)alpha=0.0
+      
       CALL GETDEP(FP1,FQ1,STRESS,FDS1,FPFP,FPFQ,DE1,FKP1,DEP1,DDSTRAN,
      1 FGS1,FF1,FG1,alpha,DDTEMP,BETA_T,FR,NDI,NSHR,NTENS)
             
@@ -125,8 +127,8 @@ C 第二次应力计算
       FSDB2=SQRT(1+FATA**2)*FPB2
       Ratio_2=FSDB2/FSD2
      
-      FKP2=(1+FVOID2)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB2/FSD2)**2-
-     1 FATA*FATA)/2.0/FATA
+      FKP2=(1+FVOID2)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB2/FSD2)**(2+nc)-
+     & FATA*FATA)/2.0/FATA
       FDS2=(FM*FM*(FSD2/FSDB2)**2-FATA*FATA)/2.0/FATA
   
       CALL GETDEP(FP2,FQ2,STRESS1,FDS2,FPFP,FPFQ,DE2,FKP2,DEP2,DDSTRAN,
@@ -206,8 +208,8 @@ C 更新数据
       FSD=SQRT(FP**2+FQ**2)     
       FPB=FPC*EXP(-((FATA/FM)**FN)*LOG(FR))
       FSDB=SQRT(1+FATA**2)*FPB
-      FKP=(1+FVOID)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB/FSD)**2-
-     1 FATA*FATA)/2.0/FATA
+      FKP=(1+FVOID)/(FLama-FKapa)/LOG(FR)*(FM*FM*(FSDB/FSD)**(2+nc)-
+     & FATA*FATA)/2.0/FATA
       FDS=(FM*FM*(FSD/FSDB)**2-FATA*FATA)/2.0/FATA 
      
       CALL GETDEP(FP,FQ,STRESS,FDS,FPFP,FPFQ,DE,FKP,DDSDDE,DSTRAN,FGS,
@@ -370,7 +372,10 @@ C恢复ABAQUS原本的符号
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION FG(NTENS),TH_PLAS(NTENS)
       Do I=1,NTENS
-          TH_PLAS(I)=FG(I)/(FKP+FF)*BETA_T/LOG(FR)*DTEMP
+        TH_PLAS(I)=0.0
+      End Do
+      Do I=1,NTENS
+       If(DTEMP.GE.1e-12) TH_PLAS(I)=FG(I)/(FKP+FF)*BETA_T/LOG(FR)*DTEMP
       End Do
      
       End
@@ -381,10 +386,12 @@ C
       INCLUDE 'ABA_PARAM.INC'
 C
       DIMENSION STATEV(NSTATV),COORDS(NCRDS)
-
-
-       STATEV(1)=0.879
-       STATEV(2)=150
+       !STATEV(1)=0.634 ! OCR=1 Zhou(2015) itatic Clay
+       !STATEV(1)=0.58! OCR=1 Zhou(2017)
+       STATEV(1)=0.879 ! OCR=1 Zhou(2015) Boom Clay
+       !STATEV(1)=0.789 ! OCR=2 Zhou(2015)
+       STATEV(2)=150 !OCR=1
+       !STATEV(2)=300 !OCR=2
        STATEV(3)=20
        !STATEV(4)=100000
       RETURN
