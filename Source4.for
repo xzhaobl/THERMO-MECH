@@ -340,19 +340,20 @@ C
        !STATEV(2)=300 !OCR=2
        STATEV(3)=20
        !STATEV(4)=100000
+CCCC
        Patm=101
        E1=0.67
        FLAMA=0.09
        FKAPPA=0.01
        M=1.2
        Y=COORDS(2)
-       VSTRESS=18.0*(10-Y)+1
+       VSTRESS=18.0*(50-Y)+1
        HSTRESS=0.6*VSTRESS
        P=(VSTRESS+HSTRESS*2.0)/3.0
        Q=VSTRESS-HSTRESS
        PC=P*EXP(Q/M/P*LOG(2.718))
        STATEV(2)=PC
-       E0=E1-FLAMA*LOG(PC/Patm)
+       E0=E1-FLAMA*LOG(PC/Patm)+FKAPPA*LOG(PC/P)
        STATEV(1)=E0
       RETURN
       End

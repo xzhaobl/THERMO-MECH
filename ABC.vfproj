@@ -50,6 +50,7 @@
 		<Filter Name="NewFolder1">
 		<File RelativePath=".\Source10.for"/>
 		<File RelativePath=".\Source11.for"/></Filter>
+		<File RelativePath=".\bounding.for"/>
 		<File RelativePath=".\CYCLE.for"/>
 		<File RelativePath=".\foundation.for"/>
 		<File RelativePath=".\HELLO.for"/>

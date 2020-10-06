@@ -397,8 +397,9 @@ C
       INCLUDE 'ABA_PARAM.INC'
 C
       DIMENSION STATEV(NSTATV),COORDS(NCRDS)
-       STATEV(1)=0.634 ! OCR=1 Zhou(2015) itatic Clay
+       !STATEV(1)=0.634 ! OCR=1 Zhou(2015) itatic Clay
        !STATEV(1)=0.58! OCR=1 Zhou(2017)
+       STATEV(1)=0.745! OCR=1 Zhou(2017)
        !STATEV(1)=0.879 ! OCR=1 Zhou(2015) Boom Clay
        !STATEV(1)=0.789 ! OCR=2 Zhou(2015)
        STATEV(2)=150 !OCR=1

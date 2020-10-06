@@ -25,7 +25,7 @@ C USER-DEFINED MATRIX
 C INPUT MATERIAL PARAMETERS          
       FLAMA=PROPS(1)
       FKAPA=PROPS(2)
-      GREF=PROPS(3)
+      FU=PROPS(3)
       FM=PROPS(4)
       FN0=PROPS(5)
       FGA0=PROPS(6)
@@ -48,7 +48,8 @@ C LOOP BEGIN
       IF(FQ1.LE.1e-5)FQ1=1e-5
       FSD1=SQRT(FP1**2+FQ1**2)
       FKMOD1=-(1+FVOID1)*FP1/FKAPA
-      FGMOD1=GREF*((1+FVOID1)**(-3.0))*SQRT(-FP1/patm)
+      !FGMOD1=GREF*((1+FVOID1)**(-3.0))*SQRT(-FP1/patm)
+      FGMOD1=FKMOD1*3.0*(1-2.0*FU)/2.0/(1+FU)
       
       CALL GETDE(FKMOD1,FGMOD1,DE1,NDI,NSHR,NTENS)
       
@@ -90,7 +91,8 @@ C LOOP BEGIN
       FQ2=SINV2
       IF(FQ2.LE.1e-5)FQ2=1e-5
       FKMOD2=-(1+FVOID2)*FP2/FKAPA
-      FGMOD2=GREF*((1+FVOID2)**(-3.0))*SQRT(-FP2/patm)
+      !FGMOD2=GREF*((1+FVOID2)**(-3.0))*SQRT(-FP2/patm)
+      FGMOD2=FKMOD2*3.0*(1-2.0*FU)/2.0/(1+FU)
       CALL GETDE(FKMOD2,FGMOD2,DE2,NDI,NSHR,NTENS)
       
       FPFP=-FN*((-FQ2/FM/FP2)**(FN-1))*(-FQ2/FM)/FP2/FP2+1/FP2/LOG(FR)
@@ -172,7 +174,8 @@ C LOOP BEGIN
       STATEV(2)=FPC
       
       FKMOD=-(1+FVOID)*FP/FKAPA
-      FGMOD=GREF*((1+FVOID)**(-3.0))*SQRT(-FP/patm)
+      !FGMOD=GREF*((1+FVOID)**(-3.0))*SQRT(-FP/patm)
+      FGMOD=FKMOD*3.0*(1-2.0*FU)/2.0/(1+FU)
       CALL GETDE(FKMOD,FGMOD,DE,NDI,NSHR,NTENS)
       IF(FQ.LE.1e-5)FQ=1e-5
       
@@ -325,19 +328,20 @@ C
        !STATEV(2)=300 !OCR=2
        STATEV(3)=20
        !STATEV(4)=100000
+CCCCC
        Patm=101
        E1=0.67
        FLAMA=0.09
        FKAPPA=0.01
        M=1.2
        Y=COORDS(2)
-       VSTRESS=18.0*(10-Y)+1
+       VSTRESS=18.0*(50-Y)+1
        HSTRESS=0.6*VSTRESS
        P=(VSTRESS+HSTRESS*2.0)/3.0
        Q=VSTRESS-HSTRESS
        PC=P*EXP(Q/M/P*LOG(2.718))
        STATEV(2)=PC
-       E0=E1-FLAMA*LOG(PC/Patm)
+       E0=E1-FLAMA*LOG(PC/Patm)+FKAPPA*LOG(PC/P+1)
        STATEV(1)=E0
       RETURN
       End
