@@ -418,7 +418,7 @@ CCCCCC
        M=1.2
        Y=COORDS(2)
        VSTRESS=18.0*(50-Y)+1
-       HSTRESS=0.9*VSTRESS
+       HSTRESS=1.2*VSTRESS
        P=(VSTRESS+HSTRESS*2.0)/3.0
        Q=VSTRESS-HSTRESS
        PC=P*EXP(Q/M/P*LOG(2.718))

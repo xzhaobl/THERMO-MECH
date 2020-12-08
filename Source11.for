@@ -234,7 +234,8 @@ C 更新数据
       STATEV(1)=FVOID2
       STATEV(2)=FPC
       STATEV(3)=TEMP+DTEMP
-      STATEV(4)=FGMOD
+      STATEV(4)=FSD
+      STATEV(5)=FSDB
      !! if (NOEL==1)then
      !!     if (NPT==1) then
      !!     !Open(101,file='E:\ratio.txt',position='append')

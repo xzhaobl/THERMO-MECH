@@ -49,10 +49,13 @@
 		<Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 		<Filter Name="NewFolder1">
 		<File RelativePath=".\Source10.for"/>
-		<File RelativePath=".\Source11.for"/></Filter>
+		<File RelativePath=".\Source11.for"/>
+		<File RelativePath=".\Source12.for"/></Filter>
 		<File RelativePath=".\bounding.for"/>
 		<File RelativePath=".\CYCLE.for"/>
 		<File RelativePath=".\foundation.for"/>
+		<File RelativePath=".\foundation2.for"/>
+		<File RelativePath=".\foundation3D.for"/>
 		<File RelativePath=".\HELLO.for"/>
 		<File RelativePath=".\MCC.for"/>
 		<File RelativePath=".\Source1.for"/>
