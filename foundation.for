@@ -422,7 +422,7 @@ CCCCCC
        P=(VSTRESS+HSTRESS*2.0)/3.0
        Q=VSTRESS-HSTRESS
        PC=P*EXP(Q/M/P*LOG(2.718))
-       STATEV(2)=PC
+       STATEV(2)=1.0*PC
        E0=E1-FLAMA*LOG(PC/Patm)+FKAPPA*LOG(PC/P)
        STATEV(1)=E0
       RETURN

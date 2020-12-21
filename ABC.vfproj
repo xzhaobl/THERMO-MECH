@@ -48,9 +48,11 @@
 		<Filter Name="Header Files" Filter="fi;fd;h;inc"/>
 		<Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 		<Filter Name="NewFolder1">
+		<File RelativePath=".\foundation-lightlyOCR.for"/>
 		<File RelativePath=".\Source10.for"/>
 		<File RelativePath=".\Source11.for"/>
-		<File RelativePath=".\Source12.for"/></Filter>
+		<File RelativePath=".\Source12.for"/>
+		<File RelativePath=".\Source13.for"/></Filter>
 		<File RelativePath=".\bounding.for"/>
 		<File RelativePath=".\CYCLE.for"/>
 		<File RelativePath=".\foundation.for"/>

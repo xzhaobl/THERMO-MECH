@@ -32,7 +32,8 @@ C INPUT MATERIAL PARAMETERS
       SSTOL=1E-4
       FLama=PROPS(1)
       FKapa=PROPS(2)
-      Fu=PROPS(3)
+      !Gref=PROPS(3)
+      FU=PROPS(3)
       FM=PROPS(4)
       FN0=PROPS(5)
       FGA0=PROPS(6)
@@ -66,7 +67,8 @@ C 第一次应力计算
       If(FQ1.LE.1e-5)FQ1=1e-5
       FSD1=SQRT(FP1**2+FQ1**2) !distance to the original point
       FKMOD1=(1+FVOID1)*FP1/FKapa !K
-      FGMOD1=FKMOD1*3.0*(1-2.0*FU)/2.0/(1+FU) !G
+      !FGMOD1=Gref*((1+FVOID1)**(-3.0))*SQRT(FP1/patm) !G
+      FGMOD1=FKMOD1*3.0*(1-2.0*FU)/2.0/(1+FU)
       
       CALL GETDE(FKMOD1,FGMOD1,DE1,NDI,NSHR,NTENS)
       
@@ -122,7 +124,9 @@ C 第二次应力计算
       FQ2=SINV2
       If(FQ2.LE.1e-5)FQ2=1e-5
       FKMOD2=(1+FVOID2)*FP2/FKapa
-      FGMOD2=FKMOD2*3.0*(1-2.0*FU)/2.0/(1+FU) 
+      !FGMOD2=Gref*((1+FVOID2)**(-3.0))*SQRT(FP2/patm)
+      FGMOD2=FKMOD2*3.0*(1-2.0*FU)/2.0/(1+FU)
+      
       CALL GETDE(FKMOD2,FGMOD2,DE2,NDI,NSHR,NTENS)
       
       FPFP=FN*((FQ2/FM/FP2)**(FN-1))*(-FQ2/FM)/FP2/FP2+1/FP2/LOG(FR)
@@ -211,7 +215,8 @@ C 更新数据
       FVOID=FVOID2
       
       FKMOD=(1+FVOID)*FP/FKapa
-      FGMOD=FKMOD*3.0*(1-2.0*FU)/2.0/(1+FU) 
+      !FGMOD=Gref*((1+FVOID)**(-3.0))*SQRT(FP/patm)
+      FGMOD=FKMOD*3.0*(1-2.0*FU)/2.0/(1+FU)
       CALL GETDE(FKMOD,FGMOD,DE,NDI,NSHR,NTENS)
       If(FQ.LE.1e-5)FQ=1e-5
       
@@ -234,8 +239,7 @@ C 更新数据
       STATEV(1)=FVOID2
       STATEV(2)=FPC
       STATEV(3)=TEMP+DTEMP
-      STATEV(4)=FSD
-      STATEV(5)=FSDB
+      STATEV(4)=FGMOD
      !! if (NOEL==1)then
      !!     if (NPT==1) then
      !!     !Open(101,file='E:\ratio.txt',position='append')
@@ -399,16 +403,27 @@ C
 C
       DIMENSION STATEV(NSTATV),COORDS(NCRDS)
        !STATEV(1)=0.634 ! OCR=1 Zhou(2015) itatic Clay
-	 STATEV(1)=1.09! OCR=1 Zhou(2017)
        !STATEV(1)=0.58! OCR=1 Zhou(2017)
-       !STATEV(1)=0.745! OCR=1 Zhou(2017)
        !STATEV(1)=0.879 ! OCR=1 Zhou(2015) Boom Clay
        !STATEV(1)=0.789 ! OCR=2 Zhou(2015)
-       !STATEV(1)=0.49 ! OCR=2 Zhou(2015)
-       STATEV(2)=150 !OCR=1
-       !STATEV(2)=225 !OCR=1.5
+       !STATEV(2)=150 !OCR=1
        !STATEV(2)=300 !OCR=2
        STATEV(3)=20
        !STATEV(4)=100000
+CCCCCC
+       Patm=101
+       E1=0.67
+       FLAMA=0.25
+       FKAPPA=0.05
+       M=1.2
+       Y=COORDS(2)
+       VSTRESS=18.0*(50-Y)+1
+       HSTRESS=1.2*VSTRESS
+       P=(VSTRESS+HSTRESS*2.0)/3.0
+       Q=VSTRESS-HSTRESS
+       PC=P*EXP(Q/M/P*LOG(2.718))
+       STATEV(2)=1.7*PC
+       E0=E1-FLAMA*LOG(PC/Patm)+FKAPPA*LOG(PC/P)
+       STATEV(1)=E0
       RETURN
       End
