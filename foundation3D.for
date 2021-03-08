@@ -417,12 +417,12 @@ CCCCCC
        FKAPPA=0.05
        M=1.2
        Y=COORDS(3)
-       VSTRESS=18.0*Y+1
+       VSTRESS=10.0*Y+1
        HSTRESS=1.2*VSTRESS
        P=(VSTRESS+HSTRESS*2.0)/3.0
        Q=VSTRESS-HSTRESS
        PC=P*EXP(Q/M/P*LOG(2.718))
-       STATEV(2)=PC
+       STATEV(2)=1.7*PC
        E0=E1-FLAMA*LOG(PC/Patm)+FKAPPA*LOG(PC/P)
        STATEV(1)=E0
       RETURN

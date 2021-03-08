@@ -400,13 +400,13 @@ C
        !STATEV(1)=0.634 ! OCR=1 Zhou(2015) itatic Clay
        !!STATEV(1)=0.58! OCR=1 Zhou(2017)
        !STATEV(1)=0.704! OCR=1 Zhou(2017)
-       !STATEV(1)=0.747! OCR=1.3 Zhou(2017) 
-       STATEV(1)=0.71! OCR=7 Zhou(2017)
+       STATEV(1)=0.747! OCR=1.3 Zhou(2017) 
+       !STATEV(1)=0.71! OCR=7 Zhou(2017)
        !STATEV(1)=0.879 ! OCR=1 Zhou(2015) Boom Clay
        !STATEV(1)=0.789 ! OCR=2 Zhou(2015)
        !STATEV(2)=200 !OCR=1
-       !STATEV(2)=260 !OCR=1.3     
-       STATEV(2)=300 !OCR=1.8
+       STATEV(2)=260 !OCR=1.3     
+       !STATEV(2)=300 !OCR=1.8
        !STATEV(2)=300 !OCR=2
        STATEV(3)=20
        !STATEV(4)=100000
