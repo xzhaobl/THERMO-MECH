@@ -48,15 +48,21 @@
 		<Filter Name="Header Files" Filter="fi;fd;h;inc"/>
 		<Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 		<Filter Name="NewFolder1">
+		<File RelativePath=".\cycle1.for"/>
+		<File RelativePath=".\foundation-centrifuge.for"/>
 		<File RelativePath=".\foundation-lightlyOCR.for"/>
+		<File RelativePath=".\foundation3D-laloui2004-2.for"/>
 		<File RelativePath=".\Source10.for"/>
 		<File RelativePath=".\Source11.for"/>
 		<File RelativePath=".\Source12.for"/>
-		<File RelativePath=".\Source13.for"/></Filter>
+		<File RelativePath=".\Source13.for"/>
+		<File RelativePath=".\VOID-MCC-3D.for"/>
+		<File RelativePath=".\VOIDI-3D.for"/></Filter>
 		<File RelativePath=".\bounding.for"/>
 		<File RelativePath=".\CYCLE.for"/>
 		<File RelativePath=".\foundation.for"/>
 		<File RelativePath=".\foundation2.for"/>
+		<File RelativePath=".\foundation3D-laloui2004.for"/>
 		<File RelativePath=".\foundation3D.for"/>
 		<File RelativePath=".\HELLO.for"/>
 		<File RelativePath=".\MCC.for"/>
@@ -71,6 +77,7 @@
 		<File RelativePath=".\Source9.for"/>
 		<File RelativePath=".\TEMP_MIX.for"/>
 		<File RelativePath=".\TEMP_NOT_SUB.for"/>
-		<File RelativePath=".\TEMP_NOT_SUB_NoKp.for"/></Filter>
+		<File RelativePath=".\TEMP_NOT_SUB_NoKp.for"/>
+		<File RelativePath=".\Void-MCC-2D.for"/></Filter>
 		<Filter Name="Source Files" Filter="f90;for;f;fpp;ftn;def;odl;idl"/></Files>
 	<Globals/></VisualStudioProject>
