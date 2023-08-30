@@ -414,18 +414,41 @@ C
        !STATEV(4)=100000
 CCCCCC
        Patm=101
-       E1=0.67
-       FLAMA=0.25
-       FKAPPA=0.05
+       E1=0.88
+       FLAMA=0.1
+       FKAPPA=0.026
        M=1.2
        Y=COORDS(2)
-       VSTRESS=18.0*(50-Y)+1
+       VSTRESS=10.0*(50-Y)+1
        HSTRESS=0.9*VSTRESS
        P=(VSTRESS+HSTRESS*2.0)/3.0
        Q=VSTRESS-HSTRESS
        PC=P*EXP(Q/M/P*LOG(2.718))
-       STATEV(2)=PC
+       STATEV(2)=1.7*PC
        E0=E1-FLAMA*LOG(PC/Patm)+FKAPPA*LOG(PC/P)
        STATEV(1)=E0
       RETURN
       End
+      
+      SUBROUTINE VOIDRI(EZERO,COORDS,NOEL)
+C
+      INCLUDE 'ABA_PARAM.INC'
+C
+      DIMENSION COORDS(3)
+C
+       Patm=101
+       E1=0.88
+       FLAMA=0.1
+       FKAPPA=0.026
+       M=1.2
+       Y=COORDS(2)
+       !Y=COORDS(3)
+       VSTRESS=10.0*(50-Y)+1
+       HSTRESS=0.9*VSTRESS
+       P=(VSTRESS+HSTRESS*2.0)/3.0
+       Q=VSTRESS-HSTRESS
+       PC=1.7*P*EXP(Q/M/P*LOG(2.718))
+       EZERO=E1-FLAMA*LOG(PC/Patm)+FKAPPA*LOG(PC/P)
+
+	RETURN
+      END
